@@ -1,0 +1,54 @@
+import sympy
+from tqdm import tqdm
+import math
+
+def prob_kn(k):
+    if k == 1:
+        return 6 / (math.pi ** 2)
+    factors = sympy.factorint(k)
+    prob = 6 / (math.pi ** 2)
+    for p, r in factors.items():
+        prob *= 1 / (p ** r * (p + 1))
+    return prob
+
+print("Enter 7 increasing quantile bounds between 0 and 1 (e.g. 0.1 for 10%):")
+quantiles = []
+while len(quantiles) < 7:
+    try:
+        q = float(input(f"Quantile {len(quantiles)+1}: "))
+        if not (0 < q <= 1):
+            print("Please enter a value strictly between 0 and 1.")
+            continue
+        if quantiles and q <= quantiles[-1]:
+            print(f"Please enter a value greater than the previous quantile {quantiles[-1]:.4f}.")
+            continue
+        quantiles.append(q)
+    except ValueError:
+        print("Invalid input. Please enter a decimal number.")
+
+cumulative_prob = 0.0
+quantile_results = {}
+current_quantile_idx = 0
+max_k = 10**7  # adjust as needed
+
+print("\nComputing quantiles from theoretical probabilities...")
+
+for k in tqdm(range(1, max_k + 1)):
+    cumulative_prob += prob_kn(k)
+    while current_quantile_idx < len(quantiles) and cumulative_prob >= quantiles[current_quantile_idx]:
+        quantile_results[quantiles[current_quantile_idx]] = k
+        current_quantile_idx += 1
+        if current_quantile_idx >= len(quantiles):
+            break
+    if current_quantile_idx >= len(quantiles):
+        break
+
+print("\nQuantile Results:")
+for q in quantiles:
+    if q in quantile_results:
+        print(f"Quantile {q*100:.2f}% reached at k_n = {quantile_results[q]}")
+    else:
+        print(f"Quantile {q*100:.2f}% not reached within max_k = {max_k}")
+
+if current_quantile_idx < len(quantiles):
+    print("\nWarning: Increase max_k to reach all quantiles.")
