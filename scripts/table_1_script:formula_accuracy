@@ -1,0 +1,67 @@
+import sympy
+import math
+from collections import Counter
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from fractions import Fraction
+
+# Function to compute rad(n)
+def rad(n):
+    factors = sympy.primefactors(n)
+    return math.prod(factors) if factors else 1
+
+# Theoretical probability function
+def theoretical_prob(k):
+    if k == 1:
+        return Fraction(6, 1) / (math.pi ** 2)
+    if sympy.isprime(k):
+        return Fraction(1, k * (k + 1))
+
+    factors = sympy.factorint(k)
+    p_product = 1
+    p_plus_1_product = 1
+    exponent_part = 1
+
+    for p, r in factors.items():
+        p_product *= p
+        p_plus_1_product *= (p + 1)
+        exponent_part *= p**r
+
+    return Fraction(1, exponent_part * p_plus_1_product)
+
+if __name__ == '__main__':
+    N = int(input("Enter upper bound N: "))
+
+    # Count frequencies of k_n = n / rad(n)
+    freq = Counter()
+    for n in tqdm(range(1, N + 1), desc="Computing rad(n) and k_n"):
+        r = rad(n)
+        k = n // r if r else 0
+        freq[k] += 1
+
+    normalization_constant = 6 / (math.pi ** 2)
+
+    ks = sorted(freq.keys())
+    empirical_probs = []
+    theoretical_probs = []
+
+    print(f"{'k_n':>4} {'Empirical':>12} {'Theoretical':>14} {'Error':>10}")
+    for k in ks:
+        empirical = freq[k] / N
+        theoretical = float(theoretical_prob(k)) * normalization_constant if k != 1 else normalization_constant
+        error = abs(empirical - theoretical)
+        empirical_probs.append(empirical)
+        theoretical_probs.append(theoretical)
+        print(f"{k:4d} {empirical:12.6f} {theoretical:14.6f} {error:10.6f}")
+
+    # Plotting both empirical and theoretical probabilities
+    plt.figure(figsize=(12, 6))
+    plt.plot(ks, empirical_probs, 'bo-', label="Empirical Frequency")
+    plt.plot(ks, theoretical_probs, 'r--', label="Theoretical Frequency")
+    plt.title("Empirical vs Theoretical Frequencies of k_n = n / rad(n)")
+    plt.xlabel("k_n")
+    plt.ylabel("Probability")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
