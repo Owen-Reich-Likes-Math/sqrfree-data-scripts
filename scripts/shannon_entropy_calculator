@@ -1,0 +1,49 @@
+import sympy
+import math
+from collections import defaultdict
+from tqdm import tqdm
+
+# Exact probability formula for fixed k_n
+def weight(k):
+    if k == 1:
+        return 6 / (math.pi ** 2)
+    if sympy.isprime(k):
+        return (6 / (math.pi ** 2)) * (1 / (k * (k + 1)))
+    factors = sympy.factorint(k)
+    prod = 1
+    for p, r in factors.items():
+        prod *= 1 / (p ** r * (p + 1))
+    return (6 / (math.pi ** 2)) * prod
+
+# Prompt user for 5 increasing bounds
+print("Enter 5 increasing bounds for k_n (positive integers):")
+bounds = sorted([int(input(f"Bound {i+1}: ")) for i in range(5)])
+max_bound = bounds[-1]
+
+# Store entropy values at each bound
+entropy_values = {}
+entropy_sum = 0.0
+total_weight = 0.0
+current_index = 0
+
+print("\nComputing entropy in nats using exact radical distribution formula...")
+for k in tqdm(range(1, max_bound + 1)):
+    pk = weight(k)
+    if pk > 0:
+        entropy_sum += -pk * math.log(pk)  # Natural logarithm
+        total_weight += pk
+
+    # Save entropy value at the current bound
+    if k == bounds[current_index]:
+        entropy_values[k] = entropy_sum
+        current_index += 1
+        if current_index >= len(bounds):
+            break
+
+# Normalize entropy to account for slight undercount of total weight < 1
+for b in bounds:
+    entropy_values[b] /= total_weight
+
+print("\nShannon Entropy H(k_n) in nats (natural units):")
+for b in bounds:
+    print(f"Entropy[k_n $\leq$ {b:>6}] = {entropy_values[b]:.10f} nats")
