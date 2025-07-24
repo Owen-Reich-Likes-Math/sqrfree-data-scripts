@@ -1,0 +1,61 @@
+import numpy as np
+import math
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+
+def compute_spf(n):
+    spf = np.arange(n + 1)
+    spf[0:2] = 1
+    for i in range(2, int(n ** 0.5) + 1):
+        if spf[i] == i:
+            spf[i * i:n + 1:i] = np.where(spf[i * i:n + 1:i] == spf[i * i:n + 1:i], i, spf[i * i:n + 1:i])
+    return spf
+
+
+def factor_powers(k, spf):
+    factors = {}
+    while k > 1:
+        p = spf[k]
+        cnt = 0
+        while k % p == 0:
+            k //= p
+            cnt += 1
+        factors[p] = cnt
+    return factors
+
+
+def compute_probabilities(max_gamma):
+    spf = compute_spf(max_gamma)
+    probs = np.zeros(max_gamma + 1, dtype=float)
+    const = 6 / (math.pi ** 2)
+    for k in tqdm(range(1, max_gamma + 1), desc="Computing PMF"):
+        if k == 1:
+            probs[k] = const
+        else:
+            prod = 1.0
+            for p, r in factor_powers(k, spf).items():
+                prod *= 1.0 / (p ** r * (p + 1))
+            probs[k] = const * prod
+    return probs
+
+
+def plot_cdf(max_gamma):
+    pmf = compute_probabilities(max_gamma)
+    cdf = np.cumsum(pmf)
+    gamma_vals = np.arange(1, max_gamma + 1)
+    P_gamma_percent = cdf[1:]
+    delta = 1 - P_gamma_percent
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(gamma_vals, delta)
+    plt.xlabel('γ')
+    plt.ylabel('δ(γ)')
+    plt.title('δ compared to γ')
+    plt.grid(visible=True, linestyle='--', linewidth=0.5)
+    plt.tight_layout()
+    plt.show()
+
+# Example usage
+if __name__ == "__main__":
+    MAX_GAMMA = 200
+    plot_cdf(MAX_GAMMA)
