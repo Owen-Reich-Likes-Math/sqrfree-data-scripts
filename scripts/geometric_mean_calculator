@@ -3,18 +3,18 @@ import math
 from tqdm import tqdm
 import numpy as np
 
-# Define the theoretical weight/probability for k_n
+# Define the true theoretical weight/probability for k_n
 def weight(k):
     if k == 1:
         return 6 / (math.pi ** 2)
     if sympy.isprime(k):
-        return 1 / (k * (k + 1))
+        return (6 / (math.pi ** 2)) * (1 / (k * (k + 1)))
 
     factors = sympy.factorint(k)
     numerator = 1
     for p, r in factors.items():
         numerator *= 1 / (p ** r * (p + 1))
-    return numerator
+    return (6 / (math.pi ** 2)) * numerator
 
 # Prompt the user for five bounds
 print("Enter 5 increasing bounds to compute geometric expected value of k_n:")
@@ -26,7 +26,7 @@ log_sum = 0.0
 geometric_means = {}
 current_index = 0
 
-print("\nComputing log-sum with prime-structured weights...")
+print("\nComputing log-sum with normalized weights (including 6/pi^2)...")
 for k in tqdm(range(1, max_bound + 1)):
     w = weight(k)
     log_sum += math.log(k) * w
