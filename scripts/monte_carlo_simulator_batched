@@ -1,0 +1,56 @@
+import sympy
+import math
+import random
+from tqdm import tqdm
+
+
+def rad(n):
+    """Compute the radical of n: product of distinct prime factors."""
+    return math.prod(sympy.primefactors(n)) if n > 1 else 1
+
+
+def inequality_holds(a, b, epsilon):
+    """Test if log(ab) - log(k_abc) > -epsilon * log(a+b)."""
+    c = a + b
+    k_abc = (a * b * c) / rad(a * b * c)
+    return math.log(a * b) - math.log(k_abc) > -epsilon * math.log(c)
+
+
+def run_batches(X, Y, epsilon, batch_size, num_batches):
+    """
+    Run num_batches of Monte Carlo trials, each of size batch_size.
+    Returns a list of success rates for each batch.
+    """
+    batch_results = []
+    for _ in tqdm(range(num_batches), desc="Batches"):
+        holds = 0
+        for _ in range(batch_size):
+            # Sample a,b until gcd(a,b)=1 and X<ab<Y
+            while True:
+                a = random.randint(1, int(math.sqrt(Y)) + 1)
+                b = random.randint(1, int(math.sqrt(Y)) + 1)
+                ab = a * b
+                if X < ab < Y and math.gcd(a, b) == 1:
+                    break
+            if inequality_holds(a, b, epsilon):
+                holds += 1
+        rate = holds / batch_size
+        batch_results.append(rate)
+    return batch_results
+
+
+def main():
+    print("Batched Monte Carlo ABC Inequality Tester")
+    X = float(input("Enter lower bound X for ab: "))
+    Y = float(input("Enter upper bound Y for ab: "))
+    epsilon = float(input("Enter epsilon value: "))
+    batch_size = int(input("Enter batch size (e.g., 100000): "))
+    num_batches = int(input("Enter number of batches: "))
+
+    results = run_batches(X, Y, epsilon, batch_size, num_batches)
+    overall = sum(results) / len(results)
+    print(f"\nOverall success rate: {overall * 100:.5f}% over {batch_size * num_batches} samples.")
+
+
+if __name__ == "__main__":
+    main()
